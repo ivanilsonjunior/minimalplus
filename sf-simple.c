@@ -67,7 +67,7 @@ static uint8_t res_storage[4 + SF_SIMPLE_MAX_LINKS * 4];
 static uint8_t req_storage[4 + SF_SIMPLE_MAX_LINKS * 4];
 
 static void read_cell(const uint8_t *buf, sf_simple_cell_t *cell);
-static void print_cell_list(const uint8_t *cell_list, uint16_t cell_list_len);
+//static void print_cell_list(const uint8_t *cell_list, uint16_t cell_list_len);
 static void add_links_to_schedule(const linkaddr_t *peer_addr,
                                   uint8_t link_option,
                                   const uint8_t *cell_list,
@@ -235,17 +235,17 @@ delete_response_sent_callback(void *arg, uint16_t arg_len,
   //printf("\n");
 }
 
-static void
-print_cell_list(const uint8_t *cell_list, uint16_t cell_list_len)
-{
-  uint16_t i;
-  sf_simple_cell_t cell;
-
-  for(i = 0; i < cell_list_len; i += sizeof(cell)) {
-    read_cell(&cell_list[i], &cell);
-    PRINTF(" %u, ", cell.timeslot_offset);
-  }
-}
+//static void
+//print_cell_list(const uint8_t *cell_list, uint16_t cell_list_len)
+//{
+//  uint16_t i;
+//  sf_simple_cell_t cell;
+//
+//  for(i = 0; i < cell_list_len; i += sizeof(cell)) {
+//    read_cell(&cell_list[i], &cell);
+//    PRINTF(" %u, ", cell.timeslot_offset);
+//  }
+//}
 
 static void
 add_req_input(const uint8_t *body, uint16_t body_len, const linkaddr_t *peer_addr)
@@ -381,7 +381,7 @@ static void
 count_req_input(const uint8_t *body, uint16_t body_len,
                  const linkaddr_t *peer_addr)
 {
-  printf("Entrei no processamento:\n");
+  //printf("Entrei no processamento:\n");
   //uint8_t i;
   //sf_simple_cell_t cell;
   struct tsch_slotframe *slotframe;
@@ -420,22 +420,55 @@ count_req_input(const uint8_t *body, uint16_t body_len,
   //struct tsch_slotframe *sf = tsch_schedule_slotframe_head();
   struct tsch_link *l = list_head(slotframe->links_list);
   int tsch_links = 0;
-  printf("Schedule: ");
+  //printf("Schedule: ");
   while(l != NULL) {
     linkaddr_t *peer = &l->addr;
-    PRINTLLADDR((uip_lladdr_t *) peer);
+    //PRINTLLADDR((uip_lladdr_t *) peer);
     if (l->link_options == LINK_OPTION_TX) {
-      printf(" type: TX - ");
+      //printf(" type: TX - ");
       tsch_links++;
     }
     if (l->link_options == LINK_OPTION_RX) {
-      printf(" type RX - ");
+      //printf(" type RX - ");
       tsch_links++;
     }
     l = list_item_next(l);
   }
-  printf("\n");
+  //printf("\n");
   //return tsch_links;
+
+}
+
+static void
+clear_req_input(const uint8_t *body, uint16_t body_len,
+                 const linkaddr_t *peer_addr)
+{
+  uint8_t i = 0;
+  struct tsch_slotframe *sf =  tsch_schedule_get_slotframe_by_handle(slotframe_handle);
+  struct tsch_link *l;
+
+ 
+  sf_simple_cell_t cell;
+
+  assert(peer_addr != NULL && sf != NULL);
+
+  for(i = 0; i < TSCH_SCHEDULE_DEFAULT_LENGTH; i++) {
+    l = tsch_schedule_get_link_by_timeslot(sf, i, 0);
+
+    if(l) {
+      if((linkaddr_cmp(&l->addr, peer_addr)) && (l->link_options == LINK_OPTION_TX)) {
+        cell.timeslot_offset = i;
+        cell.channel_offset = l->channel_offset;
+        if(cell.timeslot_offset == 0xffff) {
+          continue;
+        }
+        tsch_schedule_remove_link_by_timeslot(sf,
+                                          cell.timeslot_offset,
+                                          cell.channel_offset);
+      }
+
+    }
+  }
 
 }
 
@@ -472,8 +505,12 @@ request_input(sixp_pkt_cmd_t cmd,
       delete_req_input(body, body_len, peer_addr);
       break;
     case SIXP_PKT_CMD_COUNT:
-      printf("Recebi um count no request:\n");
+      //printf("Recebi um count no request:\n");
       count_req_input(body, body_len, peer_addr);
+      break;
+    case SIXP_PKT_CMD_CLEAR:
+      //printf("Recebi um CLEAR no request:\n");
+      clear_req_input(body, body_len, peer_addr);
       break;
     default:
       /* unsupported request */
@@ -520,14 +557,14 @@ response_input(sixp_pkt_rc_t rc,
         remove_links_to_schedule(cell_list, cell_list_len);
         break;
       case SIXP_PKT_CMD_COUNT:
-        printf("Respondendo o COUNT\n");
+        //printf("Respondendo o COUNT\n");
         break;
       case SIXP_PKT_CMD_LIST:
       case SIXP_PKT_CMD_CLEAR:
-        printf("Recebi um clear\n");
+        //printf("Recebi um clear\n");
         break;
       default:
-        PRINTF("sf-simple: unsupported response\n");
+       // PRINTF("sf-simple: unsupported response\n");
     }
   }
 }
@@ -688,7 +725,7 @@ sf_minimalplus_flush(linkaddr_t *peer_addr)
 {
   uint8_t i = 0, index = 0;
   struct tsch_slotframe *sf =
-    tsch_schedule_get_slotframe_by_handle(slotframe_handle);
+  tsch_schedule_get_slotframe_by_handle(slotframe_handle);
   struct tsch_link *l;
 
   uint16_t req_len;
@@ -710,7 +747,7 @@ sf_minimalplus_flush(linkaddr_t *peer_addr)
       }
     }
   }
-  printf("Ninho Apagar - > Encontrei : %d celulas e a funcao indica: %d\n", index, sf_minimalplus_tx_amount(peer_addr));
+ // printf("Ninho Apagar - > Encontrei : %d celulas e a funcao indica: %d\n", index, sf_minimalplus_tx_amount(peer_addr));
   //#if(index == 0) {
   //#  return -1;
   //#}
@@ -758,6 +795,26 @@ sf_minimalplus_tx_amount(linkaddr_t *peer_addr)
   return tsch_links;
 } 
 
+//Returns the number of RX cell with 
+int 
+sf_minimalplus_rx_amount_by_peer(linkaddr_t *peer_addr)
+{
+  struct tsch_slotframe *sf = tsch_schedule_slotframe_head();
+  struct tsch_link *l = list_head(sf->links_list);
+  int tsch_links = 0;
+  //printf("Schedule: ");
+  while(l != NULL) {
+    if (l->link_options == LINK_OPTION_RX) {
+      if ( linkaddr_cmp(&l->addr, peer_addr)) {
+      tsch_links++;
+      }
+    }
+    l = list_item_next(l);
+  }
+  //printf("Ninho: Retornando: %d\n",tsch_links);
+  return tsch_links;
+} 
+
 int 
 sf_minimalplus_rx_amount()
 {
@@ -766,14 +823,14 @@ sf_minimalplus_rx_amount()
   int tsch_links = 0;
   //printf("Schedule: ");
   while(l != NULL) {
-    linkaddr_t *peer = &l->addr;
+    //linkaddr_t *peer = &l->addr;
     //PRINTLLADDR((uip_lladdr_t *) peer);
-    if (l->link_options == LINK_OPTION_TX) {
+    //if (l->link_options == LINK_OPTION_TX) {
      // printf(" type: TX - ");
-      tsch_links++;
-    }
+    //  tsch_links++;
+    //}
     if (l->link_options == LINK_OPTION_RX) {
-      printf(" type RX - ");
+      //printf(" type RX - ");
       tsch_links++;
     }
     l = list_item_next(l);
@@ -785,7 +842,48 @@ sf_minimalplus_rx_amount()
 int
 sf_minimalplus_check(linkaddr_t *peer_addr)
 {
+
+  uint8_t i = 0;
+  struct tsch_slotframe *sf =  tsch_schedule_get_slotframe_by_handle(slotframe_handle);
+  struct tsch_link *l;
+
+ 
+  sf_simple_cell_t cell;
+
+  assert(peer_addr != NULL && sf != NULL);
+
+  for(i = 0; i < TSCH_SCHEDULE_DEFAULT_LENGTH; i++) {
+    l = tsch_schedule_get_link_by_timeslot(sf, i, 0);
+
+    if(l) {
+      if((linkaddr_cmp(&l->addr, peer_addr)) && (l->link_options == LINK_OPTION_RX)) {
+        cell.timeslot_offset = i;
+        cell.channel_offset = l->channel_offset;
+        if(cell.timeslot_offset == 0xffff) {
+          continue;
+        }
+        tsch_schedule_remove_link_by_timeslot(sf,
+                                          cell.timeslot_offset,
+                                          cell.channel_offset);
+      }
+
+    }
+  }
+
   memset(sixp_pkg_data, 0, sizeof(sixp_pkg_data)); 
+  assert( sixp_pkt_set_metadata(SIXP_PKT_TYPE_REQUEST,
+                               (sixp_pkt_code_t)(uint8_t)SIXP_PKT_CMD_CLEAR,
+                               pkt_metadata,
+                               sixp_pkg_data,
+                               sizeof(sixp_pkg_data)) == 0);
+  
+  assert( sixp_output(SIXP_PKT_TYPE_REQUEST,
+                                (sixp_pkt_code_t)(uint8_t)SIXP_PKT_CMD_CLEAR,
+                                SF_SIMPLE_SFID,
+                                sixp_pkg_data, sizeof(sixp_pkt_metadata_t),
+                                peer_addr, NULL, NULL, 0) == 0) ;
+
+  /*memset(sixp_pkg_data, 0, sizeof(sixp_pkg_data)); 
   assert( sixp_pkt_set_metadata(SIXP_PKT_TYPE_REQUEST,
                                (sixp_pkt_code_t)(uint8_t)SIXP_PKT_CMD_COUNT,
                                pkt_metadata,
@@ -800,11 +898,11 @@ sf_minimalplus_check(linkaddr_t *peer_addr)
                                 sixp_pkg_data, sizeof(sixp_pkg_data)) == 0);
 
   
-  int retorno = sixp_output(SIXP_PKT_TYPE_REQUEST,
+  assert( sixp_output(SIXP_PKT_TYPE_REQUEST,
                                 (sixp_pkt_code_t)(uint8_t)SIXP_PKT_CMD_COUNT,
                                 SF_SIMPLE_SFID,
                                 sixp_pkg_data, sizeof(sixp_pkt_metadata_t) + sizeof(sixp_pkt_cell_options_t) ,
-                                peer_addr, NULL, NULL, 0);
+                                peer_addr, NULL, NULL, 0) == 0) ;*/
   //printf("Ninho - Pedi p contar (%d)\n", retorno);
   return 0;
 }
