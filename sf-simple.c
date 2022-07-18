@@ -422,7 +422,7 @@ count_req_input(const uint8_t *body, uint16_t body_len,
   int tsch_links = 0;
   //printf("Schedule: ");
   while(l != NULL) {
-    linkaddr_t *peer = &l->addr;
+    //linkaddr_t *peer = &l->addr;
     //PRINTLLADDR((uip_lladdr_t *) peer);
     if (l->link_options == LINK_OPTION_TX) {
       //printf(" type: TX - ");
@@ -557,14 +557,11 @@ response_input(sixp_pkt_rc_t rc,
         remove_links_to_schedule(cell_list, cell_list_len);
         break;
       case SIXP_PKT_CMD_COUNT:
-        //printf("Respondendo o COUNT\n");
-        break;
       case SIXP_PKT_CMD_LIST:
       case SIXP_PKT_CMD_CLEAR:
-        //printf("Recebi um clear\n");
-        break;
       default:
-       // PRINTF("sf-simple: unsupported response\n");
+        break;
+        
     }
   }
 }
