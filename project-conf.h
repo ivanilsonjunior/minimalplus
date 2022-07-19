@@ -34,18 +34,23 @@
 
 
 #define LOG_CONF_LEVEL_RPL                         LOG_LEVEL_INFO
-#define LOG_CONF_LEVEL_TCPIP                       LOG_LEVEL_INFO
-#define LOG_CONF_LEVEL_IPV6                        LOG_LEVEL_INFO
-#define LOG_CONF_LEVEL_6LOWPAN                     LOG_LEVEL_INFO
+#define LOG_CONF_LEVEL_TCPIP                       LOG_LEVEL_NONE
+#define LOG_CONF_LEVEL_IPV6                        LOG_LEVEL_NONE
+#define LOG_CONF_LEVEL_6LOWPAN                     LOG_LEVEL_NONE
 #define LOG_CONF_LEVEL_MAC                         LOG_LEVEL_INFO
-#define LOG_CONF_LEVEL_FRAMER                      LOG_LEVEL_INFO
-#define LOG_CONF_LEVEL_6TOP                        LOG_LEVEL_INFO
+#define LOG_CONF_LEVEL_FRAMER                      LOG_LEVEL_NONE
+#define LOG_CONF_LEVEL_6TOP                        LOG_LEVEL_NONE
 
 
 /* Application settings */
-#define APP_SEND_INTERVAL_SEC 1
+#define APP_SEND_INTERVAL_SEC 2
 #define APP_WARM_UP_PERIOD_SEC 300
 
+/* Enable printing of packet counters */
+#define LINK_STATS_CONF_PACKET_COUNTERS          1
+
+#define RPL_CONF_OF_OCP RPL_OCP_OF0 /* tells to use OF0 for DAGs rooted at this node */
+#define RPL_CONF_SUPPORTED_OFS {&rpl_of0, &rpl_mrhof} /* tells to compile in support for both OF0 and MRHOF */
 
 /* Set to enable TSCH security */
 #ifndef WITH_SECURITY
@@ -81,7 +86,7 @@
 #define TSCH_CONF_AUTOSTART 0
 
 /* 6TiSCH schedule length */
-#define TSCH_SCHEDULE_CONF_DEFAULT_LENGTH 11
+#define TSCH_SCHEDULE_CONF_DEFAULT_LENGTH 7 
 
 
 #define TSCH_CONF_DEFAULT_HOPPING_SEQUENCETSCH_HOPPING_SEQUENCE_16_16
