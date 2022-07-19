@@ -98,7 +98,7 @@ PROCESS_THREAD(node_process, ev, data)
   static int is_coordinator;
   static struct etimer et;
   static struct tsch_neighbor *n;
-  static struct tsch_neighbor *old_n;
+  //static struct tsch_neighbor *old_n;
 
 
   PROCESS_BEGIN();
@@ -126,23 +126,23 @@ PROCESS_THREAD(node_process, ev, data)
   
     if(!is_coordinator && n != NULL) {
       int diotime = curr_instance.dag.dio_intcurrent;
-      int fila = tsch_queue_global_packet_count();
+      //int fila = tsch_queue_global_packet_count();
       if (diotime != 0) {
         //printf("Diotime: %d\n", diotime);
         int tsch_links = sf_minimalplus_tx_amount(tsch_queue_get_nbr_address(n));
         int max_links = TSCH_SCHEDULE_DEFAULT_LENGTH/3;
-        int demanded_cell = (diotime<16) + (fila > 5);
+        int demanded_cell = (diotime<=16);// + (fila >= 15) + (fila >= 30);
         if (demanded_cell > max_links){
           demanded_cell = max_links;
         }
         //printf("Ninho - Demanda = %d -> Max links: %d, Alocados: %d\n", demanded_cell, max_links, tsch_links);
         if (tsch_links > demanded_cell){
-          //int result = sf_minimalplus_flush(tsch_queue_get_nbr_address(n));
-          int result = sf_simple_remove_links(tsch_queue_get_nbr_address(n));
-         // printf("Del Result: %d\n", result);
-          if (result < 0) {
-            sf_minimalplus_flush(tsch_queue_get_nbr_address(n));
-          }
+          sf_minimalplus_flush(tsch_queue_get_nbr_address(n));
+          //int result = sf_simple_remove_links(tsch_queue_get_nbr_address(n));
+          //printf("Del Result: %d\n", result);
+          //if (result < 0) {
+          //  sf_minimalplus_flush(tsch_queue_get_nbr_address(n));
+          //}
 
         } else if (tsch_links < demanded_cell) {
            sf_simple_add_links(tsch_queue_get_nbr_address(n), 1);
@@ -153,7 +153,7 @@ PROCESS_THREAD(node_process, ev, data)
         }
 
             /* Test if a parent switch happened*/
-        if (old_n != n){
+        //if (old_n != n){
          // printf("O pai era ");
          // PRINTLLADDR((uip_lladdr_t *)tsch_queue_get_nbr_address(old_n));
           //printf(" e mudou para ");
@@ -163,8 +163,8 @@ PROCESS_THREAD(node_process, ev, data)
           //sf_simple_remove_links(tsch_queue_get_nbr_address(old_n));
           //printf("\n");
           //PRINTLLADDR((uip_lladdr_t *)tsch_queue_get_nbr_address(old_n));
-          sf_minimalplus_flush(tsch_queue_get_nbr_address(old_n));
-        }
+          //sf_minimalplus_flush(tsch_queue_get_nbr_address(old_n));
+        //}
 
       struct tsch_slotframe *sf = tsch_schedule_slotframe_head();
       struct tsch_link *l = list_head(sf->links_list);
@@ -172,7 +172,7 @@ PROCESS_THREAD(node_process, ev, data)
         int quantidade = sf_minimalplus_rx_amount_by_peer(&l->addr);
         //PRINTLLADDR((uip_lladdr_t *)&l->addr);
         //printf(" QUANTIDADE: %d\n", quantidade);
-        if (quantidade > 2) {
+        if (quantidade >= 2) {
           //printf("Mandando limpar\n");
           sf_minimalplus_check(&l->addr);
           continue;
@@ -181,7 +181,7 @@ PROCESS_THREAD(node_process, ev, data)
       }
 
       }
-      old_n = n;
+      //old_n = n;
 
       //printf("Ninho: RX q eu tenho: %d\n",sf_minimalplus_rx_amount());
     }
@@ -192,7 +192,7 @@ PROCESS_THREAD(node_process, ev, data)
         int quantidade = sf_minimalplus_rx_amount_by_peer(&l->addr);
         //PRINTLLADDR((uip_lladdr_t *)&l->addr);
         //printf(" QUANTIDADE: %d\n", quantidade);
-        if (quantidade > 2) {
+        if (quantidade >= 2) {
           //printf("Mandando limpar\n");
           sf_minimalplus_check(&l->addr);
           continue;
