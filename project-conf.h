@@ -43,7 +43,7 @@
 
 
 /* Application settings */
-#define APP_SEND_INTERVAL_SEC 2
+#define APP_SEND_INTERVAL_SEC 1
 #define APP_WARM_UP_PERIOD_SEC 300
 
 
