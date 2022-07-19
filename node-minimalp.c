@@ -170,7 +170,7 @@ PROCESS_THREAD(node_process, ev, data)
       struct tsch_link *l = list_head(sf->links_list);
       while(l != NULL) {
         int quantidade = sf_minimalplus_rx_amount_by_peer(&l->addr);
-        PRINTLLADDR((uip_lladdr_t *)&l->addr);
+        //PRINTLLADDR((uip_lladdr_t *)&l->addr);
         //printf(" QUANTIDADE: %d\n", quantidade);
         if (quantidade > 2) {
           //printf("Mandando limpar\n");
