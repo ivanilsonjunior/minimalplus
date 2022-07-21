@@ -863,7 +863,6 @@ sf_minimalplus_check(linkaddr_t *peer_addr)
                                           cell.timeslot_offset,
                                           cell.channel_offset);
       }
-
     }
   }
 
