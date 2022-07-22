@@ -24,7 +24,7 @@ class Runner:
         retcode = -1
         stdoutdata = ''
         try:
-            proc = Popen(args, stdout = PIPE, stderr = STDOUT, stdin = PIPE, shell = True)
+            proc = Popen(args, stdout = PIPE, stderr = STDOUT, stdin = PIPE, shell = True, start_new_session=True)
             #proc = Popen(args, stdout = self.cooja_output, stderr = STDOUT, stdin = PIPE, shell = True)
             (stdoutdata, stderrdata) = proc.communicate(input_string)
             if not stdoutdata:
@@ -37,6 +37,8 @@ class Runner:
         except CalledProcessError as e:
             sys.stderr.write("run_subprocess CalledProcessError:" + str(e))
             retcode = e.returncode
+        except KeyboardInterrupt:
+            raise Exception('Key Pressed')
         except Exception as e:
             sys.stderr.write("run_subprocess exception:" + str(e))
         finally:
@@ -55,8 +57,10 @@ class Runner:
         filename = os.path.join(self.SELF_PATH, cooja_file)
         args = " ".join(["java -Djava.awt.headless=true -jar ", self.cooja_jar, "-nogui=" + filename, "-contiki=" + self.CONTIKI_PATH])
         sys.stdout.write("  Running Cooja, args={}\n".format(args))
-
-        (retcode, output) = self.run_subprocess(args, '')
+        try:
+            (retcode, output) = self.run_subprocess(args, '')
+        except Exception:
+            print("Exception")
         if retcode != 0:
             sys.stderr.write("Failed, retcode=" + str(retcode) + ", output:")
             sys.stderr.write(output)

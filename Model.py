@@ -122,31 +122,33 @@ class Experiment(Base):
             with open('temp/Makefile','w') as file:
                 file.write(filedata)
             for run in range(repetitions):
-                import lxml.etree
-                import random
-                simFile = lxml.etree.parse(str("temp/" + self.experimentFile))
-                rand = simFile.xpath("//randomseed")[0]
-                rand.text = str(random.randint(0,65535))
-                open(str("temp/" + self.experimentFile), 'w').write(lxml.etree.tounicode(simFile))
-                runner = Runner(str("temp/" + self.experimentFile))
-                newRun = Run()
-                newRun.maxNodes = len(minidom.parse("temp/" + self.experimentFile).getElementsByTagName('id'))+1 #To use the node.id directly untedns
-                newRun.experiment = self
-                newRun.start = datetime.now()
-                try:
-                    runner.run()
-                    newRun.end = datetime.now()
-                    newRun.processRun()
-                    newRun.parameters = newRun.getBulkParameters()
-                    self.runs.append(newRun)
-                    newRun.metric = Metrics(newRun)
-                    db.add(newRun)
-                    db.commit()
-                    newRun.metric.application.process()
-                    #continue
-                except Exception as ex:
-                    print (ex)
-                    return "Error"
+                runOk = False
+                while(not runOk):
+                    print("Run " + str(run) + " of " + str(repetitions) + "IsOk?" + str(runOk))
+                    import lxml.etree
+                    import random
+                    simFile = lxml.etree.parse(str("temp/" + self.experimentFile))
+                    rand = simFile.xpath("//randomseed")[0]
+                    rand.text = str(random.randint(0,65535))
+                    open(str("temp/" + self.experimentFile), 'w').write(lxml.etree.tounicode(simFile))
+                    runner = Runner(str("temp/" + self.experimentFile))
+                    newRun = Run()
+                    newRun.maxNodes = len(minidom.parse("temp/" + self.experimentFile).getElementsByTagName('id'))+1 #To use the node.id directly untedns
+                    newRun.experiment = self
+                    newRun.start = datetime.now()
+                    retorno = runner.run()
+                    if (retorno == -1):
+                        continue
+                    else:
+                        newRun.end = datetime.now()
+                        newRun.processRun()
+                        newRun.parameters = newRun.getBulkParameters()
+                        self.runs.append(newRun)
+                        newRun.metric = Metrics(newRun)
+                        db.add(newRun)
+                        db.commit()
+                        newRun.metric.application.process()
+                        runOk = True
 
     def toCsv(self, filename):
         '''
