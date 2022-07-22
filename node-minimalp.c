@@ -98,6 +98,7 @@ PROCESS_THREAD(node_process, ev, data)
   static int is_coordinator;
   static struct etimer et;
   static struct tsch_neighbor *n;
+  linkaddr_t *no;
   PROCESS_BEGIN();
 
   is_coordinator = 0;
@@ -119,50 +120,34 @@ PROCESS_THREAD(node_process, ev, data)
     etimer_reset(&et);
 
     n = tsch_queue_get_time_source();
+    no = tsch_queue_get_nbr_address(n);
   
     if(!is_coordinator && n != NULL) {
+      //int fila = tsch_queue_global_packet_count();
       int diotime = curr_instance.dag.dio_intcurrent;
       if (diotime != 0) {
-        int tsch_links = sf_minimalplus_tx_amount(tsch_queue_get_nbr_address(n));
-        int max_links = TSCH_SCHEDULE_DEFAULT_LENGTH/3;
+        int tsch_links = sf_minimalplus_tx_amount_by_peer(no);
+        int max_links = MPLUS_MAX_LINKS;
         int demanded_cell = (diotime<=16);// + (fila >= 15) + (fila >= 30);
+        //printf("6top: Demand = %d\n",demanded_cell);
         if (demanded_cell > max_links){
           demanded_cell = max_links;
         }
         if (tsch_links > demanded_cell){
-          sf_simple_remove_links(tsch_queue_get_nbr_address(n));
+          sf_simple_remove_links(no);
         } else if (tsch_links < demanded_cell) {
-          sf_simple_add_links(tsch_queue_get_nbr_address(n), 1);
+          sf_simple_add_links(no, 1);
         }
 
-      struct tsch_slotframe *sf = tsch_schedule_slotframe_head();
-      struct tsch_link *l = list_head(sf->links_list);
-      while(l != NULL) {
-        int quantidade = sf_minimalplus_rx_amount_by_peer(&l->addr);
-        //PRINTLLADDR((uip_lladdr_t *)&l->addr);
-        //printf(" QUANTIDADE: %d\n", quantidade);
-        if (quantidade > max_links) {
-          //printf("Mandando limpar\n");
-          sf_minimalplus_check(&l->addr);
-          continue;
+        if (demanded_cell == 0) {
+          sf_minimalplus_clean(no);
         }
-        l = list_item_next(l);
-      }
-
       }
     }
-    if (is_coordinator) {
-      struct tsch_slotframe *sf = tsch_schedule_slotframe_head();
-      struct tsch_link *l = list_head(sf->links_list);
-      while(l != NULL) {
-        int quantidade = sf_minimalplus_rx_amount_by_peer(&l->addr);
-        if (quantidade >= 2) {
-          sf_minimalplus_check(&l->addr);
-          continue;
-        }
-        l = list_item_next(l);
-      }
+    if (tsch_queue_get_time_source() != NULL || is_coordinator){
+      sf_minimalplus_check();
     }
+    
   }
 
   PROCESS_END();
