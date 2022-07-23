@@ -124,7 +124,7 @@ class Experiment(Base):
             for run in range(repetitions):
                 runOk = False
                 while(not runOk):
-                    print("Run " + str(run) + " of " + str(repetitions) + " values: " + str(values))
+                    print("Run " + str(run) + " of " + str(repetitions) + " values: " + str(i.keys()))
                     import lxml.etree
                     import random
                     simFile = lxml.etree.parse(str("temp/" + self.experimentFile))
