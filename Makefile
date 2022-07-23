@@ -12,6 +12,8 @@ MAKE_MAC = MAKE_MAC_TSCH
 
 include $(CONTIKI)/Makefile.dir-variables
 MODULES += $(CONTIKI_NG_MAC_DIR)/tsch/sixtop
+# Energy usage estimation
+MODULES += os/services/simple-energest
 
 ifeq ($(MAKE_WITH_SECURITY),1)
 CFLAGS += -DWITH_SECURITY=1
