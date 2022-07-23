@@ -1,6 +1,7 @@
 import sys
 import os
 from subprocess import CalledProcessError, Popen, PIPE, STDOUT
+import signal
 
 
 '''
@@ -38,6 +39,7 @@ class Runner:
             sys.stderr.write("run_subprocess CalledProcessError:" + str(e))
             retcode = e.returncode
         except KeyboardInterrupt:
+            os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
             raise Exception('Key Pressed')
         except Exception as e:
             sys.stderr.write("run_subprocess exception:" + str(e))
