@@ -65,7 +65,10 @@ class Runner:
             print("Exception")
         if retcode != 0:
             sys.stderr.write("Failed, retcode=" + str(retcode) + ", output:")
-            sys.stderr.write(output)
+            try:
+                sys.stderr.write(output)
+            except Exception:
+                return False
             return False
 
         sys.stdout.write("  Checking for output...")

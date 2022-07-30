@@ -156,7 +156,7 @@ class Experiment(Base):
         '''
         self = self
         sfLen = ['5','7','11']
-        sendInterval = ['3600','1','2','3','4','5']
+        sendInterval = ['600','1','2','3','4','5']
         dataset = {}
         for r in self.runs:
             dataset[self.experimentFile] = {}
@@ -166,9 +166,13 @@ class Experiment(Base):
                     dataset[str(self.experimentFile)][sf][s] = []
         for r in self.runs:
             for sf in sfLen:
-                if r.parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH'] == sf:
-                    #Put Here your metrics
-                    dataset[str(self.experimentFile)][r.parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH']][r.parameters['APP_SEND_INTERVAL_SEC']].append(r.metric.getSummary())
+                try:
+                    if r.parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH'] == sf:
+                        #Put Here your metrics
+                        print("recuperando: "+ str(r.id))
+                        dataset[str(self.experimentFile)][r.parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH']][r.parameters['APP_SEND_INTERVAL_SEC']].append(r.metric.getSummary())
+                except Exception:
+                    continue
         dados = []
         init = 0
         for e in dataset.keys():
@@ -285,7 +289,10 @@ class Run(Base):
                 if (fields[2].startswith("Assertion")):
                     continue
                 logNode = int(fields[1])
-                logDesc = re.findall("\[(.*?)\]", line)[0].split(":")
+                try:
+                    logDesc = re.findall("\[(.*?)\]", line)[0].split(":")
+                except Exception:
+                    continue
                 logLevel = logDesc[0].strip()
                 logType = logDesc[1].strip()
                 data = line.split("]")[1].strip()
@@ -451,10 +458,11 @@ class Metrics(Base):
         '''
         retorno = {}
         retorno['app-latency'] = self.application.latency.latencyMean()
+        retorno['app-latency-median'] = self.application.latency.latencyMedian()
         retorno['app-pdr'] = self.application.pdr.getGlobalPDR()
         retorno['app-genPkg'] = len(self.application.records)
         retorno['rpl-parentsw'] = self.rpl.getParentSwitches()
-        retorno['rpl-avgHops'] = self.rpl.getAverangeHops(slice=3600000000)
+        retorno['rpl-avgHops'] = self.rpl.getAverangeHops(slice=600000000)
         retorno['rpl-avgHopsSliced'] = self.rpl.getAverangeHops()
         rplMessages = ['total','multicast-DIO','unicast-DIO','DIS','DAO','DAO-ACK']
         for typ in rplMessages:
@@ -584,7 +592,7 @@ class RPL(Base):
         parents = {}
         time = slice
         anterior = 0
-        endtime = 3600000001
+        endtime = 600000001
         retorno = []
         while time < endtime:
             records = [rec for rec in self.metric.run.records if rec.recordType == "RPL" and "links" in rec.rawData and rec.simTime > anterior and rec.simTime < time]
