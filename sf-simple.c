@@ -38,7 +38,7 @@
  */
 
 #include "contiki-lib.h"
-
+#include "sys/node-id.h"
 #include "lib/assert.h"
 #include "net/mac/tsch/tsch.h"
 #include "net/mac/tsch/sixtop/sixtop.h"
@@ -51,6 +51,10 @@
 
 #define DEBUG DEBUG_PRINT
 #include "net/net-debug.h"
+
+#include "sys/log.h"
+#define LOG_MODULE "6top"
+#define LOG_LEVEL LOG_LEVEL_6TOP
 
 #define SIXP_PKT_BUFLEN   128
 static uint8_t sixp_pkg_data[SIXP_PKT_BUFLEN];
@@ -144,11 +148,11 @@ add_links_to_schedule(const linkaddr_t *peer_addr, uint8_t link_option,
       continue;
     }
 
-    //PRINTF("sf-simple: Schedule link %d as %s with node ",
-    //       cell.timeslot_offset,
-     //      link_option == LINK_OPTION_RX ? "RX" : "TX");
-    //PRINTLLADDR((uip_lladdr_t *)peer_addr);
-    //PRINTF("\n");
+    LOG_INFO("MinimalPlus - sf-simple: Schedule link %d as %s with node ",
+           cell.timeslot_offset,
+           link_option == LINK_OPTION_RX ? "RX" : "TX");
+    LOG_INFO_LLADDR(peer_addr);
+    LOG_INFO_("\n");
     tsch_schedule_add_link(slotframe,
                            link_option, LINK_TYPE_NORMAL, peer_addr,
                            cell.timeslot_offset, cell.channel_offset, 1);
@@ -182,6 +186,7 @@ remove_links_to_schedule(const uint8_t *cell_list, uint16_t cell_list_len)
     tsch_schedule_remove_link_by_timeslot(slotframe,
                                           cell.timeslot_offset,
                                           cell.channel_offset);
+    LOG_INFO("MinimalPlus - sf-simple: Removing link %d \n", cell.timeslot_offset);
   }
 }
 
@@ -269,7 +274,7 @@ add_req_input(const uint8_t *body, uint16_t body_len, const linkaddr_t *peer_add
                             (sixp_pkt_code_t)(uint8_t)SIXP_PKT_CMD_ADD,
                             &cell_list, &cell_list_len,
                             body, body_len) != 0) {
-    //PRINTF("sf-simple: Parse error on add request\n");
+    LOG_ERR("sf-simple: Parse error on add request\n");
     return;
   }
 
@@ -617,7 +622,7 @@ sf_simple_add_links(linkaddr_t *peer_addr, uint8_t num_links)
         index++;
         slot_check++;
       } else if(slot_check > TSCH_SCHEDULE_DEFAULT_LENGTH) {
-        //PRINTF("sf-simple:! Number of trials for free slot exceeded...\n");
+        LOG_ERR("MinimalPlus - sf-simple:! Number of trials for free slot exceeded...\n");
         return -1;
         break; /* exit while loop */
       }
@@ -725,6 +730,8 @@ sf_minimalplus_tx_amount()
 {
   struct tsch_slotframe *sf = tsch_schedule_slotframe_head();
   struct tsch_link *l = list_head(sf->links_list);
+
+  assert( l != NULL && sf != NULL);
   int tsch_links = 0;
   while(l != NULL) {
     if (l->link_options == LINK_OPTION_TX) {
@@ -740,6 +747,7 @@ sf_minimalplus_tx_amount_by_peer(linkaddr_t *peer_addr)
 {
   struct tsch_slotframe *sf = tsch_schedule_slotframe_head();
   struct tsch_link *l = list_head(sf->links_list);
+  assert( l != NULL && sf != NULL);
   int tsch_links = 0;
   while(l != NULL) {
     linkaddr_t *peer = &l->addr;
@@ -759,6 +767,7 @@ sf_minimalplus_rx_amount_by_peer(linkaddr_t *peer_addr)
 {
   struct tsch_slotframe *sf = tsch_schedule_slotframe_head();
   struct tsch_link *l = list_head(sf->links_list);
+  assert( l != NULL && sf != NULL);
   int tsch_links = 0;
   while(l != NULL) {
     if (l->link_options == LINK_OPTION_RX) {
@@ -777,6 +786,7 @@ sf_minimalplus_rx_amount()
 {
   struct tsch_slotframe *sf = tsch_schedule_slotframe_head();
   struct tsch_link *l = list_head(sf->links_list);
+  assert( l != NULL && sf != NULL);
   int tsch_links = 0;
   while(l != NULL) {
     if (l->link_options == LINK_OPTION_RX) {
@@ -795,9 +805,19 @@ sf_minimalplus_check()
 {
   struct tsch_slotframe *sf = tsch_schedule_get_slotframe_by_handle(slotframe_handle);
   struct tsch_link *l = list_head(sf->links_list);
+  assert( l != NULL && sf != NULL);
   while(l != NULL) {
     int quantidade = sf_minimalplus_rx_amount_by_peer(&l->addr);
     if (quantidade > MPLUS_MAX_LINKS) {
+      LOG_DBG("MinimalPlus - ");
+      sixp_trans_t *trans = sixp_trans_find(&l->addr);
+      if (trans != NULL) {
+        LOG_DBG_("Transacion detected aborting.\n");
+        return -1;
+      }
+      LOG_DBG_("Cleaning schedule with: ");
+      LOG_DBG_LLADDR(&l->addr);
+      LOG_DBG_("\n");
       sf_minimalplus_clean(&l->addr);
       break;
     }
@@ -820,7 +840,7 @@ sf_minimalplus_clean(linkaddr_t *peer_addr)
 
   for(i = 0; i < TSCH_SCHEDULE_DEFAULT_LENGTH; i++) {
     l = tsch_schedule_get_link_by_timeslot(sf, i, 0);
-
+    assert(l != NULL);
     if(l) {
       if((linkaddr_cmp(&l->addr, peer_addr)) && (l->link_options == LINK_OPTION_RX)) {
         cell.timeslot_offset = i;

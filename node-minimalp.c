@@ -85,9 +85,10 @@ udp_rx_callback(struct simple_udp_connection *c,
 /*---------------------------------------------------------------------------*/
 PROCESS(node_process, "RPL Node");
 PROCESS(my_app,"UDP APP");
+PROCESS(check,"Check Schedule");
 
 
-AUTOSTART_PROCESSES(&node_process,&my_app);
+AUTOSTART_PROCESSES(&node_process,&my_app,&check);
 
 
 
@@ -123,13 +124,11 @@ PROCESS_THREAD(node_process, ev, data)
     no = tsch_queue_get_nbr_address(n);
   
     if(!is_coordinator && n != NULL) {
-      //int fila = tsch_queue_global_packet_count();
       int diotime = curr_instance.dag.dio_intcurrent;
       if (diotime != 0) {
         int tsch_links = sf_minimalplus_tx_amount_by_peer(no);
         int max_links = MPLUS_MAX_LINKS;
         int demanded_cell = (diotime<=16);// + (fila >= 15) + (fila >= 30);
-        //printf("6top: Demand = %d\n",demanded_cell);
         if (demanded_cell > max_links){
           demanded_cell = max_links;
         }
@@ -138,16 +137,8 @@ PROCESS_THREAD(node_process, ev, data)
         } else if (tsch_links < demanded_cell) {
           sf_simple_add_links(no, 1);
         }
-
-        if (demanded_cell == 0) {
-          sf_minimalplus_clean(no);
-        }
       }
     }
-    if (tsch_queue_get_time_source() != NULL || is_coordinator){
-      sf_minimalplus_check();
-    }
-    
   }
 
   PROCESS_END();
@@ -197,3 +188,23 @@ PROCESS_THREAD(my_app, ev, data)
 
 
 /*---------------------------------------------------------------------------*/
+PROCESS_THREAD(check, ev, data)
+{
+  static int is_coordinator;
+  static struct etimer et;
+  PROCESS_BEGIN();
+  #if CONTIKI_TARGET_COOJA
+    is_coordinator = (node_id == 1);
+  #endif
+
+  etimer_set(&et, CLOCK_SECOND * 5);
+
+  while(1) {
+    PROCESS_YIELD_UNTIL(etimer_expired(&et));
+    if (tsch_queue_get_time_source() != NULL || is_coordinator){
+      sf_minimalplus_check();
+    }
+    etimer_set(&et, CLOCK_SECOND * 15);
+  }
+  PROCESS_END();
+}

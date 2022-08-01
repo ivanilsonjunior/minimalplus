@@ -39,7 +39,7 @@
 #define LOG_CONF_LEVEL_6LOWPAN                     LOG_LEVEL_NONE
 #define LOG_CONF_LEVEL_MAC                         LOG_LEVEL_INFO
 #define LOG_CONF_LEVEL_FRAMER                      LOG_LEVEL_NONE
-#define LOG_CONF_LEVEL_6TOP                        LOG_LEVEL_DBG
+#define LOG_CONF_LEVEL_6TOP                        LOG_LEVEL_NONE
 
 
 /* Application settings */
@@ -87,7 +87,7 @@
 
 /* 6TiSCH schedule length */
 #define TSCH_SCHEDULE_CONF_DEFAULT_LENGTH 5
-
+#define ENERGEST_CONF_ON 1
 
 #define TSCH_CONF_DEFAULT_HOPPING_SEQUENCETSCH_HOPPING_SEQUENCE_16_16
 
