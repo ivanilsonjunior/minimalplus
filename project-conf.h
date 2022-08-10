@@ -44,7 +44,7 @@
 
 /* Application settings */
 #define APP_SEND_INTERVAL_SEC 1
-#define APP_WARM_UP_PERIOD_SEC 300
+#define APP_WARM_UP_PERIOD_SEC 120
 
 /* Enable printing of packet counters */
 #define LINK_STATS_CONF_PACKET_COUNTERS          1
@@ -87,7 +87,7 @@
 
 /* 6TiSCH schedule length */
 #define TSCH_SCHEDULE_CONF_DEFAULT_LENGTH 5
-#define TSCH_CONF_MAC_MAX_FRAME_RETRIES 3
+/*#define TSCH_CONF_MAC_MAX_FRAME_RETRIES 3*/
 #define ENERGEST_CONF_ON 1
 
 #define TSCH_CONF_DEFAULT_HOPPING_SEQUENCETSCH_HOPPING_SEQUENCE_16_16

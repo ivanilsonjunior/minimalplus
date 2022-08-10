@@ -156,7 +156,7 @@ class Experiment(Base):
         '''
         self = self
         sfLen = ['5','7','11']
-        sendInterval = ['600','1','2','3','4','5']
+        sendInterval = ['1200','1','2','3','4','5']
         dataset = {}
         dados = []        
         for r in self.runs:
