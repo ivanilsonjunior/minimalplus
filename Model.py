@@ -22,6 +22,7 @@ matplotlib.use('Agg')
 import threading
 import itertools
 import pandas as pd
+import gc
 
 from sqlalchemy.sql.elements import TextClause
 from Runner import Runner
@@ -170,8 +171,9 @@ class Experiment(Base):
                 try:
                     if r.parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH'] == sf:
                         #Put Here your metrics
-                        print("recuperando: "+ str(r.id))
+                        print("Run id: "+ str(r.id))
                         dataset[str(self.experimentFile)][r.parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH']][r.parameters['APP_SEND_INTERVAL_SEC']].append(r.metric.getSummary())
+                        gc.collect()
                 except Exception:
                     continue
         for e in dataset.keys():
@@ -183,6 +185,7 @@ class Experiment(Base):
                     data['Sent Interval'] = sentInt
                     data.update(json.loads(df.mean().to_json()))
                     dados.append(data)
+                    del data
         df = pd.json_normalize(dados) 
         df.to_csv(filename)
         dados = []
@@ -468,27 +471,32 @@ class Metrics(Base):
         Here you should return the metrics that you want
         '''
         retorno = {}
+        print ("App", end =" ")
         retorno['app-latency'] = self.application.latency.latencyMean()
         retorno['app-latency-median'] = self.application.latency.latencyMedian()
         retorno['app-pdr'] = self.application.pdr.getGlobalPDR()
         retorno['app-genPkg'] = len(self.application.records)
+        print ("RPL", end =" ")
         retorno['rpl-parentsw'] = self.rpl.getParentSwitches()
         #retorno['rpl-avgHops'] = self.rpl.getAverangeHops(slice=600000000)
         #retorno['rpl-avgHopsSliced'] = self.rpl.getAverangeHops()
         rplMessages = ['total','multicast-DIO','unicast-DIO','DIS','DAO','DAO-ACK']
+        rplType = self.rpl.getControlMessages()
         for typ in rplMessages:
-            rplType = self.rpl.getControlMessages()
             chave = str('rpl-msg-'+ typ)
             retorno.setdefault(chave,0)
             try:
                 retorno[chave] = rplType[typ]
             except KeyError:
                 retorno[chave] = 0
+        print ("MAC", end =" ")
+        print("Retransmisstions", end =" ")
         retransmissions = self.mac.getRetransmissions()
         retorno['mac-retransmissions'] = retransmissions['retransmissions']
         retorno['mac-retransRate'] = retransmissions['retransRate']
+        print("Disconnections", end =" ")
         retorno['mac-disconnections'] = self.mac.getDisconnections()
-        retorno['mac-formation'] = self.mac.formationTime()
+        retorno['mac-formation'] = 0#self.mac.formationTime()
         #nbrQueue = self.mac.getNBRQueueOccupation()
         #retorno['mac-queuenbr-length'] = nbrQueue['length']
         #retorno['mac-queuenbr-occupation'] = nbrQueue['occupation']
@@ -497,9 +505,13 @@ class Metrics(Base):
         #retorno['mac-queueglobal-length'] = globalQueue['length']
         #retorno['mac-queueglobal-occupation'] = globalQueue['occupation']
         #retorno['mac-queueglobal-variance'] = globalQueue['variance']
+        print("PDR", end =" ")
         retorno['link-pdr'] = self.linkstats.getPDR()['PDR']
+        print ("Energy RDC", end =" ")
         retorno['energy-RDC'] = self.energy.getRadioDutyCicle()
+        print ("Energy Channel", end =" ")
         retorno['energy-ChannelOccupation'] = self.energy.getChannelUtilization()
+        print("END")
         return retorno
 
 class Application(Base):
@@ -573,6 +585,7 @@ class RPL(Base):
             if reExp.search(new):
                 new = None            
             results[str(sw.node)].append({'time' : sw.simTime, 'old' : old, 'new' : new})
+        del data
         return results
 
     def getParentSwitches(self) -> int:
@@ -592,6 +605,7 @@ class RPL(Base):
             msgType = r.rawData.split(' ')[2]
             retorno.setdefault(msgType, 0)
             retorno[msgType] += 1
+        del records
         return retorno
 
     def getAverangeHops(self, slice = 300000000) -> float:
@@ -637,6 +651,8 @@ class RPL(Base):
                 retorno.append(statistics.mean(data))
             except statistics.StatisticsError:
                 retorno.append(0)
+            del data
+            del records
         return statistics.mean(retorno)
 
     def getMetrics(self):
@@ -904,10 +920,12 @@ class MAC(Base):
                                 None
         else:
             data = [rec for rec in self.metric.run.records if rec.recordType == "CSMA"]
+        del data
         self.results =  results
         
     def processIngress(self):
-        data = [rec for rec in self.metric.run.records if rec.recordType == "TSCH"]
+        data = db.query(Record).filter_by(run = self.metric.run).filter_by(recordType = "TSCH").filter(Record.rawData.contains("leaving the network") | Record.rawData.contains("association done")).all()
+        #data = [rec for rec in self.metric.run.records if rec.recordType == "TSCH"]
         results = [[] for x in range(self.metric.run.maxNodes)]
         for rec in data:
             if rec.rawData.startswith("leaving the network"):
@@ -916,6 +934,7 @@ class MAC(Base):
             if rec.rawData.startswith("association done"):
                 results[int(rec.node)].append(tuple((float(rec.simTime)//1000, True)))
                 continue
+        del data
         return results
 
     def formationTime(self) -> float():
@@ -934,6 +953,7 @@ class MAC(Base):
                 connected += 1
                 if simNodes == connected:
                     return float(rec.simTime)//1000
+        return null
         raise Exception("All Nodes have Never Simultaneously Connected")
 
     
@@ -1143,7 +1163,8 @@ class LinkStats(Base):
         nodesStats = {}
         for n in range(self.metric.run.maxNodes):
             nodesStats[n] = {"tx": 0, "ack":0}
-        data = [rec for rec in self.metric.run.records if rec.recordType == "Link Stats"]
+        #data = [rec for rec in self.metric.run.records if rec.recordType == "Link Stats"]
+        data = db.query(Record).filter_by(run = self.metric.run).filter_by(recordType = "Link Stats").all()
         for rec in data:
             tx = int(rec.rawData.split()[2].split("=")[1])
             ack = int(rec.rawData.split()[3].split("=")[1])
@@ -1498,7 +1519,8 @@ class Energy(Base):
             parsing = self.parseEnergest(rec.rawData)
             if parsing != None:
                 parsing['time'] = rec.simTime
-                self.results.append(parsing)    
+                self.results.append(parsing)
+        del records
 
 Experiment.runs = relationship("Run", order_by = Run.id, back_populates="experiment")
 Run.records = relationship("Record", order_by = Record.id, back_populates="run")
