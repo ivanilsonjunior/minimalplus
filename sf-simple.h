@@ -53,7 +53,7 @@ int sf_minimalplus_check();
 int sf_minimalplus_clean(linkaddr_t *peer_addr);
 
 #define SF_SIMPLE_MAX_LINKS  3
-#define MPLUS_MAX_LINKS 1
+#define MPLUS_MAX_LINKS 3
 #define SF_SIMPLE_SFID       0xf0
 extern const sixtop_sf_t sf_simple_driver;
 

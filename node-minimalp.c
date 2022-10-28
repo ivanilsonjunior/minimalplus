@@ -125,17 +125,23 @@ PROCESS_THREAD(node_process, ev, data)
   
     if(!is_coordinator && n != NULL) {
       int diotime = curr_instance.dag.dio_intcurrent;
+      int rank = curr_instance.dag.rank;
+      int minRank = curr_instance.min_hoprankinc;
+      int hop = (rank == 0) ? -1 : rank / minRank;
+      int fila = tsch_queue_global_packet_count();
       if (diotime != 0) {
         int tsch_links = sf_minimalplus_tx_amount_by_peer(no);
         int max_links = MPLUS_MAX_LINKS;
-        int demanded_cell = (diotime<=16);// + (fila >= 15) + (fila >= 30);
+        int demanded_cell = (diotime<=16) + ((hop < 4 ) && (diotime <= 18)) + (fila >= 16) + (fila >= 32);
+        printf("Trickle: (%i) RANK: %i Demand: %i-> Hop = %i -> DIOTIme = %i -> Fila = %i\n" ,node_id, rank, demanded_cell, hop, diotime, fila);
+        printf("Trickle: Tenho: %i, Demanda: %i (Pedindo: %i)\n",tsch_links,demanded_cell,demanded_cell-tsch_links);
         if (demanded_cell > max_links){
           demanded_cell = max_links;
         }
         if (tsch_links > demanded_cell){
           sf_simple_remove_links(no);
         } else if (tsch_links < demanded_cell) {
-          sf_simple_add_links(no, 1);
+          sf_simple_add_links(no, demanded_cell-tsch_links);
         }
       }
     }

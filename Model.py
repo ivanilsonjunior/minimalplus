@@ -22,7 +22,7 @@ matplotlib.use('Agg')
 import threading
 import itertools
 import pandas as pd
-import gc
+#import gc
 
 from sqlalchemy.sql.elements import TextClause
 from Runner import Runner
@@ -173,7 +173,7 @@ class Experiment(Base):
                         #Put Here your metrics
                         print("Run id: "+ str(r.id))
                         dataset[str(self.experimentFile)][r.parameters['TSCH_SCHEDULE_CONF_DEFAULT_LENGTH']][r.parameters['APP_SEND_INTERVAL_SEC']].append(r.metric.getSummary())
-                        gc.collect()
+                        #gc.collect()
                 except Exception:
                     continue
         for e in dataset.keys():
@@ -490,7 +490,7 @@ class Metrics(Base):
             except KeyError:
                 retorno[chave] = 0
         print ("MAC", end =" ")
-        print("Retransmisstions", end =" ")
+        print("Retransmissions", end =" ")
         retransmissions = self.mac.getRetransmissions()
         retorno['mac-retransmissions'] = retransmissions['retransmissions']
         retorno['mac-retransRate'] = retransmissions['retransRate']

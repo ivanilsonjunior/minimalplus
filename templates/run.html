@@ -15,10 +15,6 @@
         function update_progress() {
             $.getJSON('/experiment/run/progress').done(function(data){
                 n = data["progress"]
-                $('#progressDone').html(n);
-                $('#isRun').html(data["run"]? "Yes" : "No");
-                $('#isDone').html(data["doneIn"]);
-                $('.progress-bar').attr('aria-valuenow', n).css("width", n+'%');    
                 if (n == 100) {
                     $('#isRun').html(data["run"]? "Yes" : "No");
                     $('#isDone').html(data["doneIn"]);
@@ -28,6 +24,10 @@
                     $('.back').css('display', 'inline-block');
                     clearInterval(interval);
                 }
+                $('#progressDone').html(n);
+                $('#isRun').html(data["run"]? "Yes" : "No");
+                $('#isDone').html(data["doneIn"]);
+                $('.progress-bar').attr('aria-valuenow', n).css("width", n+'%');    
             }).fail(function() {
                 clearInterval(interval);
             });
